@@ -1,0 +1,7 @@
+.cache/
+lig_ui_state.json
+metadata.json
+config.json
+__pycache__/
+.tracking
+

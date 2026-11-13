@@ -1,5 +1,6 @@
 import server
 from aiohttp import web
+import asyncio
 import os
 import json
 import torch
@@ -810,6 +811,26 @@ async def get_all_tags(request):
     except Exception as e:
         return web.json_response({"status": "error", "message": str(e)}, status=500)
 
+def _get_image_meta(full_path):
+    has_workflow = False
+    aspect_ratio = 1.0
+    try:
+        with Image.open(full_path) as img:
+            w, h = img.width, img.height
+            try:
+                exif = img.getexif()
+                if exif and exif.get(274) in (5, 6, 7, 8):
+                    w, h = h, w
+            except Exception:
+                pass
+            if w > 0 and h > 0:
+                aspect_ratio = round(w / h, 4)
+            if img.info and ('workflow' in img.info or 'prompt' in img.info):
+                has_workflow = True
+    except Exception:
+        pass
+    return has_workflow, aspect_ratio
+
 def get_cached_directory_data(directory, force_refresh=False):
     now = time.time()
     cache_key = directory
@@ -851,17 +872,16 @@ def get_cached_directory_data(directory, force_refresh=False):
             else:
                 ext = os.path.splitext(item)[1].lower()
                 if ext in SUPPORTED_IMAGE_EXTENSIONS:
-                    has_workflow = False
-                    try:
-                        with Image.open(full_path) as img:
-                            if img.info and ('workflow' in img.info or 'prompt' in img.info):
-                                has_workflow = True
-                    except:
-                        pass
-                    all_items.append({**item_data, 'type': 'image', 'has_workflow': has_workflow})
+                    has_workflow, aspect_ratio = _get_image_meta(full_path)
+                    all_items.append({**item_data, 'type': 'image', 'has_workflow': has_workflow, 'aspectRatio': aspect_ratio})
                 elif ext in SUPPORTED_VIDEO_EXTENSIONS:
                     has_workflow = video_has_workflow(full_path)
-                    all_items.append({**item_data, 'type': 'video', 'has_workflow': has_workflow})
+                    video_entry = {**item_data, 'type': 'video', 'has_workflow': has_workflow}
+                    cache_path = get_thumbnail_cache_path(full_path, True)
+                    if os.path.exists(cache_path):
+                        _, aspect_ratio = _get_image_meta(cache_path)
+                        video_entry['aspectRatio'] = aspect_ratio
+                    all_items.append(video_entry)
                 elif ext in SUPPORTED_AUDIO_EXTENSIONS:
                     all_items.append({**item_data, 'type': 'audio'})
         except (PermissionError, FileNotFoundError):
@@ -889,7 +909,7 @@ async def get_local_images(request):
     filter_mode = request.query.get('filter_mode', 'OR').upper()
 
     page = int(request.query.get('page', 1))
-    per_page = int(request.query.get('per_page', 50))
+    per_page = int(request.query.get('per_page', 200))
     sort_by = request.query.get('sort_by', 'name')
     sort_order = request.query.get('sort_order', 'asc')
 
@@ -923,14 +943,9 @@ async def get_local_images(request):
                                     'mtime': stats.st_mtime, 'rating': meta.get('rating', 0), 'tags': meta.get('tags', [])
                                 }
                                 if item_type == 'image':
-                                    has_workflow = False
-                                    try:
-                                        with Image.open(path) as img:
-                                            if img.info and ('workflow' in img.info or 'prompt' in img.info):
-                                                has_workflow = True
-                                    except:
-                                        pass
+                                    has_workflow, aspect_ratio = _get_image_meta(path)
                                     item_info['has_workflow'] = has_workflow
+                                    item_info['aspectRatio'] = aspect_ratio
                                 all_items_with_meta.append(item_info)
                             except: continue
 
@@ -987,6 +1002,7 @@ async def get_local_images(request):
         
         return web.json_response({
             "items": paginated_items, "total_pages": (len(all_items_with_meta) + per_page - 1) // per_page,
+            "total_items": len(all_items_with_meta),
             "current_page": page, "current_directory": directory, "parent_directory": parent_directory,
             "is_global_search": search_mode == 'global' and filter_tags
         })
@@ -1039,14 +1055,9 @@ async def get_selected_items(request):
                         'tags': item_meta.get('tags', [])
                     }
                     if item_data.get("type") == 'image':
-                        has_workflow = False
-                        try:
-                            with Image.open(path) as img:
-                                if img.info and ('workflow' in img.info or 'prompt' in img.info):
-                                    has_workflow = True
-                        except:
-                            pass
+                        has_workflow, aspect_ratio = _get_image_meta(path)
                         item_info['has_workflow'] = has_workflow
+                        item_info['aspectRatio'] = aspect_ratio
                     all_items_with_meta.append(item_info)
                 except (PermissionError, FileNotFoundError):
                     continue
@@ -1078,6 +1089,9 @@ async def get_ui_state(request):
             "selection": [],
             "sort_by": "name",
             "sort_order": "asc",
+            "columns": "0",
+            "scroll_top": 0,
+            "loaded_pages": 1,
             "show_images": True,
             "show_videos": False,
             "show_audio": False,
@@ -1097,6 +1111,30 @@ def get_thumbnail_cache_path(filepath, is_video=False):
     filename = hashlib.md5(filepath.encode('utf-8')).hexdigest()
     return os.path.join(THUMBNAIL_CACHE_DIR, filename + ".webp")
 
+THUMBNAIL_HEADERS = {"Cache-Control": "public, max-age=31536000, immutable"}
+
+def _generate_thumbnail_sync(filepath, cache_path, is_video):
+    if is_video:
+        video_cap = cv2.VideoCapture(filepath)
+        try:
+            if not video_cap.isOpened():
+                raise IOError("Cannot open video file")
+            ret, frame = video_cap.read()
+            if not ret:
+                raise ValueError("Cannot read frame from video")
+
+            img = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+            img.thumbnail([320, 320], Image.LANCZOS)
+            img.save(cache_path, "WEBP", quality=80)
+        finally:
+            if video_cap.isOpened():
+                video_cap.release()
+    else:
+        with Image.open(filepath) as img:
+            img = ImageOps.exif_transpose(img)
+            img.thumbnail([320, 320], Image.LANCZOS)
+            img.save(cache_path, "WEBP", quality=85)
+
 @prompt_server.routes.get("/local_image_gallery/thumbnail")
 async def get_thumbnail(request):
     filepath = request.query.get('filepath')
@@ -1111,30 +1149,11 @@ async def get_thumbnail(request):
     cache_path = get_thumbnail_cache_path(filepath, is_video)
 
     if os.path.exists(cache_path) and os.path.getmtime(cache_path) > os.path.getmtime(filepath):
-        return web.FileResponse(cache_path)
+        return web.FileResponse(cache_path, headers=THUMBNAIL_HEADERS)
 
     try:
-        if is_video:
-            try:
-                video_cap = cv2.VideoCapture(filepath)
-                if not video_cap.isOpened():
-                    raise IOError("Cannot open video file")
-                ret, frame = video_cap.read()
-                if not ret:
-                    raise ValueError("Cannot read frame from video")
-
-                img = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-                img.thumbnail([320, 320], Image.LANCZOS)
-                img.save(cache_path, "WEBP", quality=80)
-            finally:
-                if 'video_cap' in locals() and video_cap.isOpened():
-                    video_cap.release()
-        else:
-            img = Image.open(filepath)
-            img.thumbnail([320, 320], Image.LANCZOS)
-            img.save(cache_path, "WEBP", quality=85)
-
-        return web.FileResponse(cache_path)
+        await asyncio.to_thread(_generate_thumbnail_sync, filepath, cache_path, is_video)
+        return web.FileResponse(cache_path, headers=THUMBNAIL_HEADERS)
     except Exception as e:
         print(f"LocalMediaManager: Error generating thumbnail for {filepath}: {e}")
         return web.Response(status=500)

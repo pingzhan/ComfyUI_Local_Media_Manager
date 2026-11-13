@@ -103,14 +103,20 @@ function setupGlobalLightbox() {
         #${lightboxId} [disabled] { display: none; }
         #${lightboxId} .lightbox-dimensions {
             position: absolute;
-            bottom: 0px;
+            bottom: 8px;
             left: 50%;
             transform: translateX(-50%);
-            background-color: rgba(0, 0, 0, 0.7);
+            background-color: rgba(0, 0, 0, 0.75);
             color: #fff;
-            padding: 2px 4px;
+            padding: 4px 10px;
             border-radius: 5px;
             font-size: 14px;
+            max-width: 90%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            -webkit-user-select: text;
+            user-select: text;
             z-index: 10001;
         }
     `;
@@ -496,8 +502,9 @@ app.registerExtension({
                         #${uniqueId} .lmm-breadcrumb-separator { color: #888; margin: 0 2px; user-select: none; }
                         #${uniqueId} .lmm-breadcrumb-ellipsis { color: #888; padding: 0 4px; user-select: none; font-weight: bold; }
                         
-                        #${uniqueId} .lmm-cardholder { position: relative; overflow-y: auto; overflow-x: hidden; background: #222; padding: 0; border-radius: 5px; flex-grow: 1; min-height: 0; height: 0; width: 100%; transition: opacity 0.2s ease-in-out; box-sizing: border-box; }
-                        #${uniqueId} .lmm-gallery-card { position: absolute; border: 3px solid transparent; border-radius: 8px; box-sizing: border-box; transition: all 0.3s ease; display: flex; flex-direction: column; background-color: var(--comfy-input-bg); }
+                        #${uniqueId} .lmm-cardholder { position: relative; overflow-y: auto; overflow-x: hidden; background: #222; padding: 0; border-radius: 5px; flex-grow: 1; min-height: 0; height: 0; width: 100%; transition: opacity 0.2s ease-in-out; box-sizing: border-box; contain: layout paint; }
+                        #${uniqueId} .lmm-scroll-spacer { position: absolute; top: 0; left: 0; width: 1px; height: 0; pointer-events: none; }
+                        #${uniqueId} .lmm-gallery-card { position: absolute; border: 3px solid transparent; border-radius: 8px; box-sizing: border-box; transition: border-color 0.2s ease, box-shadow 0.2s ease; display: flex; flex-direction: column; background-color: var(--comfy-input-bg); }
                         #${uniqueId} .lmm-gallery-card.lmm-selected { border-color: #00FFC9; }
                         #${uniqueId} .lmm-gallery-card.lmm-edit-selected { border-color: #FFD700; box-shadow: 0 0 10px #FFD700; }
                         #${uniqueId} .lmm-selection-badge {
@@ -517,11 +524,11 @@ app.registerExtension({
                             z-index: 1;
                         }
                         
-                        #${uniqueId} .lmm-card-media-wrapper { cursor: pointer; flex-grow: 1; position: relative; display: flex; align-items: center; justify-content: center; min-height: 100px; }
+                        #${uniqueId} .lmm-card-media-wrapper { cursor: pointer; flex-grow: 1; position: relative; display: flex; align-items: center; justify-content: center; min-height: 40px; }
                         #${uniqueId} .lmm-gallery-card img, #${uniqueId} .lmm-gallery-card video { width: 100%; height: auto; border-top-left-radius: 5px; border-top-right-radius: 5px; display: block; }
-                        #${uniqueId} .lmm-folder-card, #${uniqueId} .lmm-audio-card { cursor: pointer; background-color: transparent; flex-grow: 1; padding: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+                        #${uniqueId} .lmm-folder-card, #${uniqueId} .lmm-audio-card { cursor: pointer; background-color: transparent; flex-grow: 1; padding: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; box-sizing: border-box; width: 100%; height: 100%; }
                         #${uniqueId} .lmm-folder-card:hover, #${uniqueId} .lmm-audio-card:hover { background-color: #444; }
-                        #${uniqueId} .lmm-folder-icon, #${uniqueId} .lmm-audio-icon { width: 60%; height: 60%; margin-bottom: 8px; }
+                        #${uniqueId} .lmm-folder-icon, #${uniqueId} .lmm-audio-icon { width: 55%; height: 55%; margin-bottom: 4px; }
                         #${uniqueId} .lmm-folder-name, #${uniqueId} .lmm-audio-name {
                             font-size: 12px;
                             word-break: break-all;
@@ -539,7 +546,7 @@ app.registerExtension({
                         #${uniqueId} .lmm-card-info-panel { 
                             flex-shrink: 0; background-color: var(--comfy-input-bg); 
                             padding: 4px; border-bottom-left-radius: 5px; border-bottom-right-radius: 5px; 
-                            min-height: 48px; position: relative;
+                            min-height: 30px; position: relative;
                             display: flex; flex-direction: column; align-items: flex-start;
                             box-sizing: border-box;
                         }
@@ -548,8 +555,10 @@ app.registerExtension({
                             display: flex;
                             justify-content: space-between;
                             align-items: center;
+                            flex-wrap: wrap;
+                            gap: 2px;
                             width: 100%;
-                            margin-bottom: 4px;
+                            margin-bottom: 2px;
                         }
                         
                         #${uniqueId} .lmm-workflow-text-badge {
@@ -652,6 +661,7 @@ app.registerExtension({
                         <div class="lmm-controls" style="gap: 5px;">
                             <label>Sort by:</label> <select class="lmm-sort-by"> <option value="name">Name</option> <option value="date">Date</option> <option value="rating">Rating</option> </select>
                             <label>Order:</label> <select class="lmm-sort-order"> <option value="asc">Ascending</option> <option value="desc">Descending</option> </select>
+                            <label>Columns:</label> <select class="lmm-column-count" title="Number of columns (or Ctrl + Mouse Wheel)"> <option value="0">Auto</option> <option value="2">2</option> <option value="3">3</option> <option value="4">4</option> <option value="5">5</option> <option value="6">6</option> <option value="7">7</option> <option value="8">8</option> <option value="10">10</option> </select>
                             <div style="margin-left: auto; display: flex; align-items: center; gap: 5px;">
                                 <label>Images:</label> <input type="checkbox" class="lmm-show-images" checked>
                                 <label>Videos:</label> <input type="checkbox" class="lmm-show-videos">
@@ -692,6 +702,7 @@ app.registerExtension({
                             </div>
                             </div>
                         <div class="lmm-cardholder">
+                            <div class="lmm-scroll-spacer"></div>
                             <div class="lmm-gallery-placeholder">Enter folder path and click 'Refresh'.</div>
                         </div>
                     </div>
@@ -700,6 +711,7 @@ app.registerExtension({
                 this.size = [800, 670];
                 
                 const cardholder = galleryContainer.querySelector(".lmm-cardholder");
+                const scrollSpacer = galleryContainer.querySelector(".lmm-scroll-spacer");
                 const controls = galleryContainer.querySelector(".lmm-container-wrapper");
                 const placeholder = galleryContainer.querySelector(".lmm-gallery-placeholder");
                 
@@ -711,6 +723,7 @@ app.registerExtension({
                 const addPathButton = controls.querySelector(".lmm-add-path-button");
                 const removePathButton = controls.querySelector(".lmm-remove-path-button");
                 const upButton = controls.querySelector(".lmm-up-button");
+                const columnCountSelect = controls.querySelector(".lmm-column-count");
                 const showImagesCheckbox = controls.querySelector(".lmm-show-images");
                 const showVideosCheckbox = controls.querySelector(".lmm-show-videos");
                 const showAudioCheckbox = controls.querySelector(".lmm-show-audio");
@@ -878,39 +891,78 @@ app.registerExtension({
                 let allItems = []; 
                 let layoutData = [];
                 const VIRTUAL_SCROLL_PADDING = 500;
+                const PAGE_SIZE = 200;
                 let columnCount = 0;
                 let actualCardWidth = 0;
+                let lastMeasuredWidth = 0;
+                let lastMeasuredHeight = 0;
+                let isCardholderHidden = false;
+                let savedScrollTop = 0;
+                let savedLoadedPages = 1;
+                let scrollRafId = null;
+                const renderedCards = new Map();
+                const infoPanelHeightCache = new Map();
                 
                 const debounce = (func, delay) => { let timeoutId; return (...args) => { clearTimeout(timeoutId); timeoutId = setTimeout(() => func.apply(this, args), delay); }; };
                 
+                const debouncedSaveScrollState = debounce(() => {
+                    node_instance.properties.scroll_top = savedScrollTop;
+                    node_instance.properties.loaded_pages = currentPage;
+                    setUiState.call(node_instance, node_instance.id, {
+                        scroll_top: savedScrollTop,
+                        loaded_pages: currentPage,
+                    });
+                }, 300);
+
+                const clearRenderedCards = () => {
+                    renderedCards.forEach(card => card.remove());
+                    renderedCards.clear();
+                };
+
                 const calculateFullLayout = () => {
                     const minCardWidth = 150, gap = 5, containerWidth = cardholder.clientWidth;
-                    if (containerWidth === 0 || allItems.length === 0) {
-                        cardholder.style.height = '0px';
+                    if (allItems.length === 0) {
+                        scrollSpacer.style.height = '0px';
                         layoutData = [];
+                        clearRenderedCards();
+                        return;
+                    }
+                    if (containerWidth === 0) {
                         return;
                     }
                     
                     placeholder.style.display = 'none';
                     
-                    columnCount = Math.max(1, Math.floor(containerWidth / (minCardWidth + gap)));
+                    const requestedColumns = parseInt(columnCountSelect.value, 10) || 0;
+                    columnCount = requestedColumns > 0
+                        ? requestedColumns
+                        : Math.max(1, Math.floor(containerWidth / (minCardWidth + gap)));
                     const totalGapSpace = (columnCount - 1) * gap;
-                    actualCardWidth = (containerWidth - totalGapSpace) / columnCount;
+                    actualCardWidth = Math.max(40, (containerWidth - totalGapSpace) / columnCount);
+                    const roundedWidth = Math.round(actualCardWidth);
                     const columnHeights = new Array(columnCount).fill(0);
 
-                    const measuringDivId = `lmm-measuring-div-${uniqueId}`;
-                    let measuringDiv = galleryContainer.querySelector(`#${measuringDivId}`);
-                    if (!measuringDiv) {
-                        measuringDiv = document.createElement("div");
-                        measuringDiv.id = measuringDivId;
-                        measuringDiv.style.position = "absolute";
-                        measuringDiv.style.left = "-9999px";
-                        measuringDiv.style.visibility = "hidden";
-                        measuringDiv.style.pointerEvents = "none";
-                        galleryContainer.appendChild(measuringDiv);
-                    }
+                    let measuringDiv = null;
+                    const ensureMeasuringDiv = () => {
+                        if (measuringDiv) return measuringDiv;
+                        const measuringDivId = `lmm-measuring-div-${uniqueId}`;
+                        measuringDiv = galleryContainer.querySelector(`#${measuringDivId}`);
+                        if (!measuringDiv) {
+                            measuringDiv = document.createElement("div");
+                            measuringDiv.id = measuringDivId;
+                            measuringDiv.style.position = "absolute";
+                            measuringDiv.style.left = "-9999px";
+                            measuringDiv.style.visibility = "hidden";
+                            measuringDiv.style.pointerEvents = "none";
+                            galleryContainer.appendChild(measuringDiv);
+                        }
+                        return measuringDiv;
+                    };
 
-                    layoutData = allItems.map((item, index) => {
+                    const minMediaHeight = Math.min(100, Math.max(36, Math.round(actualCardWidth * 0.5)));
+                    const folderCardHeight = Math.max(70, Math.min(160, Math.round(actualCardWidth * 0.85)));
+
+                    layoutData = allItems.map((item) => {
                         let aspectRatio = item.aspectRatio || 1.0; 
 
                         if (!isFinite(aspectRatio) || aspectRatio <= 0) {
@@ -918,29 +970,33 @@ app.registerExtension({
                         }
                         
                         let imagePartHeight = actualCardWidth / aspectRatio;
+                        let cardHeight = folderCardHeight;
                         
                         if (item.type === 'image' || item.type === 'video') {
-                            imagePartHeight = Math.max(imagePartHeight, 100); 
-
-                            const tags = item.tags.map(t => `<span class="lmm-tag">${t}</span>`).join('');
-                            const workflowTextBadge = item.has_workflow ? `<div class="lmm-workflow-text-badge">Workflow</div>` : '';
-                            const stars = Array.from({ length: 5 }, (_, i) => `<span class="lmm-star">☆</span>`).join('');
-
-                            const infoPanelHTML = `
-                                <div class="lmm-card-info-panel" style="width: ${actualCardWidth}px;">
-                                    <div class="lmm-info-top-row">
-                                        <div class="lmm-star-rating">${stars}</div>
-                                        ${workflowTextBadge}
+                            imagePartHeight = Math.max(imagePartHeight, minMediaHeight); 
+                            const tagKey = item.tags && item.tags.length > 0 ? item.tags.join(',') : '';
+                            const cacheKey = `${roundedWidth}:${item.has_workflow ? 1 : 0}:${tagKey}`;
+                            let infoPanelHeight;
+                            if (infoPanelHeightCache.has(cacheKey)) {
+                                infoPanelHeight = infoPanelHeightCache.get(cacheKey);
+                            } else {
+                                const mDiv = ensureMeasuringDiv();
+                                const tags = item.tags ? item.tags.map(t => `<span class="lmm-tag">${t}</span>`).join('') : '';
+                                const workflowTextBadge = item.has_workflow ? `<div class="lmm-workflow-text-badge">Workflow</div>` : '';
+                                const stars = Array.from({ length: 5 }, () => `<span class="lmm-star">☆</span>`).join('');
+                                mDiv.innerHTML = `
+                                    <div class="lmm-card-info-panel" style="width: ${actualCardWidth}px;">
+                                        <div class="lmm-info-top-row">
+                                            <div class="lmm-star-rating">${stars}</div>
+                                            ${workflowTextBadge}
+                                        </div>
+                                        <div class="lmm-tag-list">${tags}</div>
                                     </div>
-                                    <div class="lmm-tag-list">${tags}</div>
-                                </div>
-                            `;
-                            measuringDiv.innerHTML = infoPanelHTML;
-                            
-                            const infoPanelHeight = measuringDiv.querySelector('.lmm-card-info-panel').offsetHeight + 2;
-                            var cardHeight = imagePartHeight + infoPanelHeight;
-                        } else {
-                            var cardHeight = 150; 
+                                `;
+                                infoPanelHeight = mDiv.querySelector('.lmm-card-info-panel').offsetHeight + 2;
+                                infoPanelHeightCache.set(cacheKey, infoPanelHeight);
+                            }
+                            cardHeight = imagePartHeight + infoPanelHeight;
                         }
                         
                         const minHeight = Math.min(...columnHeights);
@@ -951,6 +1007,7 @@ app.registerExtension({
                             top: minHeight,
                             width: actualCardWidth,
                             height: cardHeight,
+                            imageHeight: imagePartHeight,
                             columnIndex: columnIndex
                         };
                         
@@ -958,73 +1015,138 @@ app.registerExtension({
                         return position;
                     });
                     
-                    measuringDiv.innerHTML = "";
+                    if (measuringDiv) {
+                        measuringDiv.innerHTML = "";
+                    }
                     
                     const totalHeight = Math.max(...columnHeights);
-                    cardholder.style.height = `${totalHeight}px`;
+                    scrollSpacer.style.height = `${totalHeight}px`;
                     
-                    updateVisibleItemsAndRender();
+                    if (savedScrollTop > 0 && Math.abs(cardholder.scrollTop - savedScrollTop) > 1) {
+                        cardholder.scrollTop = savedScrollTop;
+                    }
+                    
+                    updateVisibleItemsAndRender(true);
                 };
                 
                 const debouncedLayout = debounce(calculateFullLayout, 50);
                 
-                const updateVisibleItemsAndRender = () => {
+                const updateCardSelectionBadge = (card, selectionIndex) => {
+                    let badge = card.querySelector('.lmm-selection-badge');
+                    if (selectionIndex > -1) {
+                        if (!badge) {
+                            badge = document.createElement('div');
+                            badge.className = 'lmm-selection-badge';
+                            const mediaWrapper = card.querySelector('.lmm-card-media-wrapper');
+                            if (mediaWrapper) mediaWrapper.appendChild(badge);
+                        }
+                        badge.textContent = selectionIndex;
+                    } else if (badge) {
+                        badge.remove();
+                    }
+                };
+
+                const updateVisibleItemsAndRender = (forceLayoutUpdate = false) => {
                     const scrollTop = cardholder.scrollTop;
                     const viewHeight = cardholder.clientHeight;
                     const viewStart = scrollTop - VIRTUAL_SCROLL_PADDING;
                     const viewEnd = scrollTop + viewHeight + VIRTUAL_SCROLL_PADDING;
                     
                     const newVisibleItems = [];
-                    allItems.forEach((item, index) => {
+                    const visiblePaths = new Set();
+                    for (let index = 0; index < allItems.length; index++) {
                         const itemLayout = layoutData[index];
-                        if (!itemLayout) return;
+                        if (!itemLayout) continue;
                         
                         const itemTop = itemLayout.top;
                         const itemBottom = itemLayout.top + itemLayout.height;
                         
                         if (itemBottom > viewStart && itemTop < viewEnd) {
+                            const item = allItems[index];
                             newVisibleItems.push({ item, index, layout: itemLayout });
+                            visiblePaths.add(item.path);
                         }
-                    });
+                    }
                     
-                    const existingCards = new Map(
-                        Array.from(cardholder.querySelectorAll('.lmm-gallery-card')).map(card => [card.dataset.path, card])
-                    );
-                    const visiblePaths = new Set(newVisibleItems.map(vi => vi.item.path));
-                    
-                    existingCards.forEach((card, path) => {
+                    renderedCards.forEach((card, path) => {
                         if (!visiblePaths.has(path)) {
                             card.remove();
+                            renderedCards.delete(path);
                         }
                     });
                     
-                    newVisibleItems.forEach(({ item, index, layout }) => {
-                        let card = existingCards.get(item.path);
-                        if (!card) {
+                    let selectionIndexMap = null;
+                    const getSelectionIndex = (path) => {
+                        if (!selectionIndexMap) {
+                            selectionIndexMap = new Map();
+                            for (let i = 0; i < selection.length; i++) {
+                                selectionIndexMap.set(selection[i].path, i);
+                            }
+                        }
+                        return selectionIndexMap.has(path) ? selectionIndexMap.get(path) : -1;
+                    };
+
+                    const fragment = document.createDocumentFragment();
+                    let hasNewCards = false;
+
+                    for (let i = 0; i < newVisibleItems.length; i++) {
+                        const { item, layout } = newVisibleItems[i];
+                        let card = renderedCards.get(item.path);
+                        const isNew = !card;
+                        if (isNew) {
                             card = createCardElement(item);
-                            cardholder.appendChild(card);
+                            renderedCards.set(item.path, card);
+                            fragment.appendChild(card);
+                            hasNewCards = true;
                         }
                         
-                        card.style.left = `${layout.left}px`;
-                        card.style.top = `${layout.top}px`;
-                        card.style.width = `${layout.width}px`;
-                        
-                        if (selection.some(sel => sel.path === item.path)) {
-                            card.classList.add('lmm-selected');
-                        } else {
-                            card.classList.remove('lmm-selected');
+                        if (isNew || forceLayoutUpdate) {
+                            card.style.left = `${layout.left}px`;
+                            card.style.top = `${layout.top}px`;
+                            card.style.width = `${layout.width}px`;
+                            if (item.type === 'dir' || item.type === 'audio') {
+                                card.style.height = `${layout.height}px`;
+                            }
                         }
                         
-                        if (selectedCardsForEditing.has(item.path)) {
-                            card.classList.add('lmm-edit-selected');
-                        } else {
-                            card.classList.remove('lmm-edit-selected');
+                        if (isNew) {
+                            const selIdx = getSelectionIndex(item.path);
+                            if (selIdx > -1) {
+                                card.classList.add('lmm-selected');
+                                updateCardSelectionBadge(card, selIdx);
+                            }
+                            if (selectedCardsForEditing.has(item.path)) {
+                                card.classList.add('lmm-edit-selected');
+                            }
                         }
-                    });
-                    renderSelectionBadges();
+                    }
+
+                    if (hasNewCards) {
+                        cardholder.appendChild(fragment);
+                    }
                 }
                 
-                new ResizeObserver(debouncedLayout).observe(cardholder);
+                new ResizeObserver(() => {
+                    const w = cardholder.clientWidth;
+                    const h = cardholder.clientHeight;
+                    if (w === 0 || h === 0) {
+                        isCardholderHidden = true;
+                        return;
+                    }
+                    const justUnhidden = isCardholderHidden;
+                    isCardholderHidden = false;
+                    if (savedScrollTop > 0 && Math.abs(cardholder.scrollTop - savedScrollTop) > 1) {
+                        cardholder.scrollTop = savedScrollTop;
+                    }
+                    if (w !== lastMeasuredWidth) {
+                        lastMeasuredWidth = w;
+                        lastMeasuredHeight = h;
+                        debouncedLayout();
+                    } else if (h !== lastMeasuredHeight || justUnhidden) {
+                        lastMeasuredHeight = h;
+                        updateVisibleItemsAndRender(false);
+                    }
+                }).observe(cardholder);
                 new ResizeObserver(() => renderBreadcrumb(pathInput.value)).observe(breadcrumbContainer);
                 
                 async function setUiState(nodeId, state) {
@@ -1087,19 +1209,13 @@ app.registerExtension({
                 }
                 
                 function renderSelectionBadges() {
-                    galleryContainer.querySelectorAll('.lmm-selection-badge').forEach(badge => badge.remove());
-                    const visibleSelectedCards = Array.from(cardholder.querySelectorAll('.lmm-gallery-card.lmm-selected'));
-                    
-                    visibleSelectedCards.forEach(card => {
-                        const path = card.dataset.path;
-                        const index = selection.findIndex(item => item.path === path);
-                        if (index > -1) {
-                            const badge = document.createElement('div');
-                            badge.className = 'lmm-selection-badge';
-                            badge.textContent = index;
-                            const mediaWrapper = card.querySelector('.lmm-card-media-wrapper');
-                            if(mediaWrapper) mediaWrapper.appendChild(badge);
-                        }
+                    const selectionIndexMap = new Map();
+                    for (let i = 0; i < selection.length; i++) {
+                        selectionIndexMap.set(selection[i].path, i);
+                    }
+                    renderedCards.forEach((card, path) => {
+                        const idx = selectionIndexMap.has(path) ? selectionIndexMap.get(path) : -1;
+                        updateCardSelectionBadge(card, idx);
                     });
                 }
                 
@@ -1152,6 +1268,7 @@ app.registerExtension({
                             await Promise.all(updatePromises);
                             await loadAllTags();
                             renderTagEditor();
+                            debouncedLayout();
                             
                             if (tagFilterInput.value.trim()) {
                                 saveStateAndReload(false);
@@ -1177,9 +1294,9 @@ app.registerExtension({
                     if (item.type === 'dir') {
                         mediaHTML = `<div class="lmm-card-media-wrapper"><div class="lmm-folder-card"><div class="lmm-folder-icon">${folderSVG}</div><div class="lmm-folder-name">${item.name}</div></div></div>`;
                     } else if (item.type === 'image') {
-                        mediaHTML = `<div class="lmm-card-media-wrapper"><img src="/local_image_gallery/thumbnail?filepath=${encodeURIComponent(item.path)}&t=${item.mtime}" loading="lazy"></div>`;
+                        mediaHTML = `<div class="lmm-card-media-wrapper"><img src="/local_image_gallery/thumbnail?filepath=${encodeURIComponent(item.path)}&t=${item.mtime}" loading="lazy" decoding="async"></div>`;
                     } else if (item.type === 'video') {
-                        mediaHTML = `<div class="lmm-card-media-wrapper"><img src="/local_image_gallery/thumbnail?filepath=${encodeURIComponent(item.path)}&t=${item.mtime}" loading="lazy"><div class="lmm-video-card-overlay">${videoSVG}</div></div>`;
+                        mediaHTML = `<div class="lmm-card-media-wrapper"><img src="/local_image_gallery/thumbnail?filepath=${encodeURIComponent(item.path)}&t=${item.mtime}" loading="lazy" decoding="async"><div class="lmm-video-card-overlay">${videoSVG}</div></div>`;
                     } else if (item.type === 'audio') {
                         mediaHTML = `<div class="lmm-card-media-wrapper"><div class="lmm-audio-card"><div class="lmm-audio-icon">${audioSVG}</div><div class="lmm-audio-name">${item.name}</div></div></div>`;
                     }
@@ -1276,33 +1393,37 @@ app.registerExtension({
                     const img = card.querySelector("img");
                     if (img) {
                         img.onload = () => {
-                            const itemIndex = allItems.findIndex(i => i.path === item.path);
-                            if (itemIndex > -1) {
+                            if (img.naturalWidth > 0 && img.naturalHeight > 0) {
                                 const newAspectRatio = img.naturalWidth / img.naturalHeight;
-                                if (allItems[itemIndex].aspectRatio !== newAspectRatio) {
-                                    allItems[itemIndex].aspectRatio = newAspectRatio;
+                                if (!item.aspectRatio || Math.abs(item.aspectRatio - newAspectRatio) > 0.02) {
+                                    item.aspectRatio = newAspectRatio;
                                     debouncedLayout();
                                 }
                             }
                         };
                         img.onerror = () => {
-                             const itemIndex = allItems.findIndex(i => i.path === item.path);
-                             if (itemIndex > -1 && !allItems[itemIndex].aspectRatio) {
-                                allItems[itemIndex].aspectRatio = 1.0; 
+                            if (!item.aspectRatio) {
+                                item.aspectRatio = 1.0;
                                 debouncedLayout();
-                             }
+                            }
                         };
                     }
                     
                     return card;
                 };
                 
-                const fetchImages = async (page = 1, append = false, forceRefresh = false) => {
+                const fetchImages = async (page = 1, append = false, forceRefresh = false, preserveScroll = false) => {
                     if (isLoading) return;
                     isLoading = true;
                     updateShowSelectedButtonUI();
                     
                     if (!append) {
+                        if (!preserveScroll) {
+                            savedScrollTop = 0;
+                            savedLoadedPages = 1;
+                            node_instance.properties.scroll_top = 0;
+                            node_instance.properties.loaded_pages = 1;
+                        }
                         cardholder.style.opacity = 0;
                         await new Promise(resolve => setTimeout(resolve, 200));
                         currentPage = 1;
@@ -1373,7 +1494,9 @@ app.registerExtension({
                     
                     const sortBy = controls.querySelector(".lmm-sort-by").value;
                     const sortOrder = controls.querySelector(".lmm-sort-order").value;
-                    let url = `/local_image_gallery/images?directory=${encodeURIComponent(directory)}&page=${page}&sort_by=${sortBy}&sort_order=${sortOrder}&show_images=${showImages}&show_videos=${showVideos}&show_audio=${showAudio}&filter_tag=${encodeURIComponent(filterTag)}&search_mode=${isGlobalSearch ? 'global' : 'local'}&filter_mode=${filterMode}&force_refresh=${forceRefresh}`;
+                    const pagesToLoad = (!append && preserveScroll && savedLoadedPages > 1) ? savedLoadedPages : 1;
+                    const perPageParam = pagesToLoad > 1 ? `&per_page=${pagesToLoad * PAGE_SIZE}` : `&per_page=${PAGE_SIZE}`;
+                    let url = `/local_image_gallery/images?directory=${encodeURIComponent(directory)}&page=${page}${perPageParam}&sort_by=${sortBy}&sort_order=${sortOrder}&show_images=${showImages}&show_videos=${showVideos}&show_audio=${showAudio}&filter_tag=${encodeURIComponent(filterTag)}&search_mode=${isGlobalSearch ? 'global' : 'local'}&filter_mode=${filterMode}&force_refresh=${forceRefresh}`;
                     
                     if (selection.length > 0) {
                         selection.forEach(item => { url += `&selected_paths=${encodeURIComponent(item.path)}`; });
@@ -1385,25 +1508,36 @@ app.registerExtension({
                         const api_data = await response.json();
                         const items = api_data.items || [];
                         
-                        totalPages = api_data.total_pages;
+                        totalPages = api_data.total_items !== undefined
+                            ? Math.ceil(api_data.total_items / PAGE_SIZE)
+                            : api_data.total_pages;
                         parentDir = api_data.parent_directory;
                         
-                        if (!api_data.is_global_search) {
-                            pathInput.value = api_data.current_directory;
-                            lastKnownPath = api_data.current_directory;
-                            renderBreadcrumb(api_data.current_directory);
-                            setUiState.call(this, this.id, { last_path: api_data.current_directory });
-                        } else {
-                            renderBreadcrumb("Global Search");
-                            breadcrumbEl.style.pointerEvents = "none";
+                        if (!append) {
+                            if (!api_data.is_global_search) {
+                                pathInput.value = api_data.current_directory;
+                                lastKnownPath = api_data.current_directory;
+                                renderBreadcrumb(api_data.current_directory);
+                                const uiPatch = { last_path: api_data.current_directory };
+                                if (!preserveScroll) {
+                                    uiPatch.scroll_top = 0;
+                                    uiPatch.loaded_pages = 1;
+                                }
+                                setUiState.call(this, this.id, uiPatch);
+                            } else {
+                                renderBreadcrumb("Global Search");
+                                breadcrumbEl.style.pointerEvents = "none";
+                            }
                         }
                         
                         upButton.disabled = api_data.is_global_search || !parentDir;
                         
                         if (!append) {
                             allItems = items;
-                            cardholder.innerHTML = ''; 
-                            cardholder.scrollTop = 0;
+                            clearRenderedCards();
+                            if (!preserveScroll) {
+                                cardholder.scrollTop = 0;
+                            }
                         } else {
                             const existingPaths = new Set(allItems.map(i => i.path));
                             const newItems = items.filter(i => !existingPaths.has(i.path));
@@ -1417,10 +1551,25 @@ app.registerExtension({
                             placeholder.style.display = 'none';
                         }
                         
+                        currentPage = (!append && preserveScroll && pagesToLoad > 1)
+                            ? Math.min(pagesToLoad, Math.max(1, totalPages))
+                            : page;
+
                         calculateFullLayout();
+                        if (preserveScroll && savedScrollTop > 0) {
+                            cardholder.scrollTop = savedScrollTop;
+                            requestAnimationFrame(() => {
+                                if (savedScrollTop > 0 && Math.abs(cardholder.scrollTop - savedScrollTop) > 1) {
+                                    cardholder.scrollTop = savedScrollTop;
+                                    updateVisibleItemsAndRender(false);
+                                }
+                            });
+                        }
                         
                         cardholder.style.opacity = 1;
-                        currentPage = page;
+                        if (append) {
+                            debouncedSaveScrollState();
+                        }
                         
                     } catch (error) { 
                         placeholder.textContent = `Error: ${error.message}`;
@@ -1547,10 +1696,12 @@ app.registerExtension({
                     lightbox.style.display = 'flex';
                     
                     const dimensionsEl = lightbox.querySelector(".lightbox-dimensions");
+                    const filename = media.name || (media.path ? media.path.split(/[/\\]/).pop() : "");
                     lightboxImg.style.display = 'none';
                     lightboxVideo.style.display = 'none';
                     lightboxAudio.style.display = 'none';
-                    dimensionsEl.style.display = 'none';
+                    dimensionsEl.textContent = filename;
+                    dimensionsEl.style.display = filename ? 'block' : 'none';
                     lightboxVideo.pause();
                     lightboxAudio.pause();
                     
@@ -1558,14 +1709,14 @@ app.registerExtension({
                         lightboxImg.style.display = 'block';
                         lightboxImg.src = `/local_image_gallery/view?filepath=${encodeURIComponent(media.path)}`;
                         lightboxImg.onload = () => {
-                            dimensionsEl.textContent = `${lightboxImg.naturalWidth} x ${lightboxImg.naturalHeight}`;
+                            dimensionsEl.textContent = `${filename}  (${lightboxImg.naturalWidth} x ${lightboxImg.naturalHeight})`;
                             dimensionsEl.style.display = 'block';
                         };
                     } else if (media.type === 'video') {
                         lightboxVideo.style.display = 'block';
                         lightboxVideo.src = `/local_image_gallery/view?filepath=${encodeURIComponent(media.path)}`;
                         lightboxVideo.onloadedmetadata = () => {
-                            dimensionsEl.textContent = `${lightboxVideo.videoWidth} x ${lightboxVideo.videoHeight}`;
+                            dimensionsEl.textContent = `${filename}  (${lightboxVideo.videoWidth} x ${lightboxVideo.videoHeight})`;
                             dimensionsEl.style.display = 'block';
                         };
                     } else if (media.type === 'audio') {
@@ -1611,6 +1762,7 @@ app.registerExtension({
                     const state = {
                         sort_by: sortBy.value,
                         sort_order: sortOrder.value,
+                        columns: columnCountSelect.value,
                         show_images: showImagesCheckbox.checked,
                         show_videos: showVideosCheckbox.checked,
                         show_audio: showAudioCheckbox.checked,
@@ -1633,7 +1785,7 @@ app.registerExtension({
                     resetAndReload(forceRefresh);
                 };
                 
-                const resetAndReload = (forceRefresh = false) => { fetchImages.call(this, 1, false, forceRefresh); };
+                const resetAndReload = (forceRefresh = false, preserveScroll = false) => { fetchImages.call(this, 1, false, forceRefresh, preserveScroll); };
                 controls.querySelector('.lmm-refresh-button').onclick = () => saveStateAndReload(true);
                 tagFilterInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveStateAndReload(false); });
                 
@@ -1660,12 +1812,38 @@ app.registerExtension({
                             await Promise.all(updatePromises);
                             await loadAllTags();
                             renderTagEditor();
+                            debouncedLayout();
                             tagEditorInput.value = "";
                         }
                     }
                 });
                 
-                controls.querySelectorAll('select:not(.lmm-path-presets)').forEach(select => { select.addEventListener('change', () => saveStateAndReload(false)); });
+                controls.querySelectorAll('select:not(.lmm-path-presets):not(.lmm-column-count)').forEach(select => { select.addEventListener('change', () => saveStateAndReload(false)); });
+                columnCountSelect.addEventListener('change', () => {
+                    saveCurrentControlsState();
+                    calculateFullLayout();
+                });
+                cardholder.addEventListener('wheel', (e) => {
+                    if (e.ctrlKey) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const colValues = ['2', '3', '4', '5', '6', '7', '8', '10'];
+                        const currentCols = String(columnCount || 4);
+                        let idx = colValues.indexOf(currentCols);
+                        if (idx === -1) {
+                            idx = colValues.findIndex(v => parseInt(v, 10) >= columnCount);
+                            if (idx === -1) idx = colValues.length - 1;
+                        }
+                        const nextIdx = e.deltaY > 0
+                            ? Math.min(colValues.length - 1, idx + 1)
+                            : Math.max(0, idx - 1);
+                        if (columnCountSelect.value !== colValues[nextIdx]) {
+                            columnCountSelect.value = colValues[nextIdx];
+                            saveCurrentControlsState();
+                            calculateFullLayout();
+                        }
+                    }
+                }, { passive: false });
                 showImagesCheckbox.addEventListener('change', () => saveStateAndReload(false));
                 showVideosCheckbox.addEventListener('change', () => saveStateAndReload(false));
                 showAudioCheckbox.addEventListener('change', () => saveStateAndReload(false));
@@ -1754,10 +1932,19 @@ app.registerExtension({
                 });
                 
                 cardholder.onscroll = () => {
-                    updateVisibleItemsAndRender();
-                    if (cardholder.scrollTop + cardholder.clientHeight >= cardholder.scrollHeight - 300 && !isLoading && currentPage < totalPages) { 
-                        fetchImages.call(this, currentPage + 1, true, false); 
-                    } 
+                    if (isCardholderHidden || cardholder.clientWidth === 0 || cardholder.clientHeight === 0) return;
+                    savedScrollTop = cardholder.scrollTop;
+                    debouncedSaveScrollState();
+                    if (scrollRafId === null) {
+                        scrollRafId = requestAnimationFrame(() => {
+                            scrollRafId = null;
+                            if (isCardholderHidden || cardholder.clientWidth === 0 || cardholder.clientHeight === 0) return;
+                            updateVisibleItemsAndRender(false);
+                            if (cardholder.scrollTop + cardholder.clientHeight >= cardholder.scrollHeight - 300 && !isLoading && currentPage < totalPages) { 
+                                fetchImages.call(this, currentPage + 1, true, false); 
+                            }
+                        });
+                    }
                 };
                 
                 const clearTagFilterButton = controls.querySelector(".lmm-clear-tag-filter-button");
@@ -1906,6 +2093,9 @@ app.registerExtension({
                         if (state) {
                             controls.querySelector(".lmm-sort-by").value = state.sort_by;
                             controls.querySelector(".lmm-sort-order").value = state.sort_order;
+                            if (state.columns !== undefined) {
+                                columnCountSelect.value = String(state.columns);
+                            }
                             showImagesCheckbox.checked = state.show_images !== false;
                             showVideosCheckbox.checked = state.show_videos;
                             showAudioCheckbox.checked = state.show_audio;
@@ -1926,8 +2116,11 @@ app.registerExtension({
                                 lastKnownPath = state.last_path;
                             }
                             
+                            savedScrollTop = Number(this.properties.scroll_top ?? state.scroll_top ?? 0) || 0;
+                            savedLoadedPages = Math.max(1, Number(this.properties.loaded_pages ?? state.loaded_pages ?? 1) || 1);
+                            
                             switchToBreadcrumb(false);
-                            resetAndReload(false);
+                            resetAndReload(false, true);
                         }
                     } catch (e) {
                         console.error("LocalMediaManager: Unable to load the UI state:", e);
